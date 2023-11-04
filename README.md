@@ -11,8 +11,8 @@ Use the "pip install package-name" command to install the following:
 6. pickle
 
 **Training  the model:**
-
 Run the "email spam detection.ipynb" notebook
+
 <img width="439" alt="image" src="https://github.com/sam-1508/Text-spam-detection/assets/125907034/212f7672-1c8b-4375-afaa-6f41c8aa60ef">
 <img width="431" alt="image" src="https://github.com/sam-1508/Text-spam-detection/assets/125907034/ced92d5d-3e03-4d36-b51b-e4e4cca934b8">
 <img width="326" alt="Screenshot 2023-11-04 144733" src="https://github.com/sam-1508/Text-spam-detection/assets/125907034/d23d7aca-ef86-48a5-aab8-14e0d8fc5cc9">
