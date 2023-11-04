@@ -1,0 +1,151 @@
+import pandas as pd
+import re
+import nltk
+from nltk.corpus import stopwords
+from nltk.stem import PorterStemmer
+from sklearn.feature_extraction.text import CountVectorizer
+
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+from tqdm.auto import tqdm
+import time
+
+df = pd.read_csv('/spam.csv', encoding='latin-1')
+
+#print the data
+df
+
+df.drop(['Unnamed: 2','Unnamed: 3', 'Unnamed: 4'], axis = 1, inplace = True)
+
+df.head()
+
+df.tail()
+
+df.isna().any()
+
+df.isna().sum()
+
+df['v2'].nunique()
+
+df.shape
+
+df['v2'].drop_duplicates(inplace = True)
+
+df.shape
+
+
+# Create a bar plot of the class distribution
+class_counts = df['v1'].value_counts()
+class_counts.plot(kind='bar')
+plt.title('Class Distribution of Spam/Ham')
+plt.xlabel('Spam/Ham')
+plt.ylabel('Number of Mails')
+plt.show()
+
+from nltk.corpus import stopwords
+
+
+# Concatenate all tweet texts into a single string
+all_text = ' '.join(df['v2'].values)
+# Remove URLs, mentions, and hashtags from the text
+all_text = re.sub(r'http\S+', '', all_text)
+all_text = re.sub(r'@\S+', '', all_text)
+all_text = re.sub(r'#\S+', '', all_text)
+
+words = all_text.split()
+
+stop_words = set(stopwords.words('english'))
+words = [word for word in words if not word in stop_words]
+
+# Count the frequency of each word
+word_counts = Counter(words)
+top_words = word_counts.most_common(100)
+top_words
+
+# Create a bar chart of the most common words
+top_words = word_counts.most_common(10) # Change the number to show more/less words
+x_values = [word[0] for word in top_words]
+y_values = [word[1] for word in top_words]
+plt.bar(x_values, y_values)
+plt.xlabel('Word')
+plt.ylabel('Frequency')
+plt.title('Most Commonly Used Words')
+plt.show()
+
+
+# Clean the data
+def clean_text(text):
+    # Remove HTML tags
+    text = re.sub('<.*?>', '', text)
+    # Remove non-alphabetic characters and convert to lowercase
+    text = re.sub('[^a-zA-Z]', ' ', text).lower()
+    # Tokenize the text
+    words = nltk.word_tokenize(text)
+    # Remove stopwords
+    words = [w for w in words if w not in stopwords.words('english')]
+    # Stem the words
+    stemmer = PorterStemmer()
+    words = [stemmer.stem(w) for w in words]
+    # Join the words back into a string
+    text = ' '.join(words)
+    return text
+
+import nltk
+nltk.download('punkt')
+
+%%time
+
+tqdm.pandas()
+
+df['cleaned_text'] = df['v2'].progress_apply(clean_text)
+
+# Create the Bag of Words model
+cv = CountVectorizer(max_features=5000)
+X = cv.fit_transform(df['cleaned_text']).toarray()
+y = df['v1']
+
+# Split the data into training and testing sets
+from sklearn.model_selection import train_test_split
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score
+# train a Logistic Regression Model
+clf = LogisticRegression()
+
+clf.fit(X_train, y_train)
+
+y_pred = clf.predict(X_test)
+
+y_pred
+
+acc = accuracy_score(y_test, y_pred)
+print("Accuracy:", acc)
+
+accuracy_spam = accuracy_score(y_test[y_test == 'spam'], y_pred[y_test == 'spam'])
+accuracy_ham = accuracy_score(y_test[y_test == 'ham'], y_pred[y_test == 'ham'])
+
+# Create a bar chart to display the accuracy for each class
+class_labels = ['Spam', 'Ham']
+accuracy_values = [accuracy_spam, accuracy_ham]
+
+plt.figure(figsize=(8, 6))
+plt.bar(class_labels, accuracy_values, color=['red', 'green'])
+plt.title('Accuracy for Spam and Ham Emails')
+plt.xlabel('Email Class')
+plt.ylabel('Accuracy')
+plt.ylim(0, 1.0)  # Set the y-axis range from 0 to 1
+plt.show()
+
+from sklearn.metrics import confusion_matrix
+cm = confusion_matrix(y_test, y_pred)
+
+import seaborn as sns
+sns.heatmap(cm, annot=True)
+
+cm
+
+from sklearn.metrics import classification_report
+report = classification_report(y_test, y_pred)
+print(report)
